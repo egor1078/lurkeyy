@@ -1,0 +1,9 @@
+# Build artifacts
+/target
+
+# Secrets — никогда не пушить!
+.env
+
+# IDE
+.vscode/
+.idea/
