@@ -1,16 +1,14 @@
 # ─── Build stage ───
 FROM rust:latest AS builder
 
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Cache dependencies by copying manifests first
+# Cache dependencies
 COPY Cargo.toml Cargo.lock* ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release 2>/dev/null || true
 
-# Copy actual source and rebuild
+# Build actual source
 COPY . .
 RUN cargo build --release
 
