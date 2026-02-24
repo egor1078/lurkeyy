@@ -17,33 +17,62 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn from_env() -> Self {
+        let mut missing = Vec::new();
+
+        let get_env = |key: &str, missing: &mut Vec<String>| -> String {
+            match env::var(key) {
+                Ok(val) => val,
+                Err(_) => {
+                    missing.push(key.to_string());
+                    String::new()
+                }
+            }
+        };
+
+        let supabase_url = get_env("SUPABASE_URL", &mut missing);
+        let supabase_key = get_env("SUPABASE_KEY", &mut missing);
+        let hmac_secret = get_env("HMAC_SECRET", &mut missing);
+        let turnstile_secret = get_env("TURNSTILE_SECRET", &mut missing);
+        let linkvertise_id = get_env("LINKVERTISE_ID", &mut missing);
+        let base_url = get_env("BASE_URL", &mut missing);
+
+        if !missing.is_empty() {
+            eprintln!("\n❌ CRITICAL STARTUP ERROR:");
+            eprintln!("The following required environment variables are missing:");
+            for var in missing {
+                eprintln!("  - {}", var);
+            }
+            eprintln!("\nPlease add these variables in your Render Dashboard -> Environment.");
+            std::process::exit(1);
+        }
+
         Self {
-            supabase_url: env::var("SUPABASE_URL").expect("SUPABASE_URL must be set"),
-            supabase_key: env::var("SUPABASE_KEY").expect("SUPABASE_KEY must be set"),
-            hmac_secret: env::var("HMAC_SECRET").expect("HMAC_SECRET must be set"),
-            turnstile_secret: env::var("TURNSTILE_SECRET").expect("TURNSTILE_SECRET must be set"),
-            linkvertise_id: env::var("LINKVERTISE_ID").expect("LINKVERTISE_ID must be set"),
-            base_url: env::var("BASE_URL").expect("BASE_URL must be set"),
+            supabase_url,
+            supabase_key,
+            hmac_secret,
+            turnstile_secret,
+            linkvertise_id,
+            base_url,
             key_ttl_hours: env::var("KEY_TTL_HOURS")
                 .unwrap_or_else(|_| "24".to_string())
                 .parse()
-                .expect("KEY_TTL_HOURS must be a number"),
+                .unwrap_or(24),
             min_linkvertise_seconds: env::var("MIN_LINKVERTISE_SECONDS")
                 .unwrap_or_else(|_| "15".to_string())
                 .parse()
-                .expect("MIN_LINKVERTISE_SECONDS must be a number"),
+                .unwrap_or(15),
             rate_limit_session: env::var("RATE_LIMIT_SESSION")
                 .unwrap_or_else(|_| "5".to_string())
                 .parse()
-                .expect("RATE_LIMIT_SESSION must be a number"),
+                .unwrap_or(5),
             rate_limit_check: env::var("RATE_LIMIT_CHECK")
                 .unwrap_or_else(|_| "30".to_string())
                 .parse()
-                .expect("RATE_LIMIT_CHECK must be a number"),
+                .unwrap_or(30),
             port: env::var("PORT")
                 .unwrap_or_else(|_| "10000".to_string())
                 .parse()
-                .expect("PORT must be a number"),
+                .unwrap_or(10000),
         }
     }
 }
