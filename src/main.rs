@@ -11,19 +11,19 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 use axum::{
-    Router,
     routing::{get, post},
+    Router,
 };
-use sqlx::PgPool;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::config::AppConfig;
+use crate::db::SupabaseClient;
 use crate::rate_limit::RateLimiter;
 
 /// Shared application state injected into all handlers.
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: PgPool,
+    pub db: SupabaseClient,
     pub config: AppConfig,
     pub session_limiter: RateLimiter,
     pub check_limiter: RateLimiter,
@@ -47,15 +47,9 @@ async fn main() {
 
     tracing::info!("Starting LURK Key System backend...");
 
-    // Initialize database
-    let pool = db::init_pool(&config.database_url)
-        .await
-        .expect("Failed to connect to database");
-
-    // Run migrations
-    db::run_migrations(&pool)
-        .await
-        .expect("Failed to run migrations");
+    // Initialize Supabase client
+    let db = SupabaseClient::new(&config.supabase_url, &config.supabase_key);
+    tracing::info!("Supabase client initialized: {}", config.supabase_url);
 
     // Initialize rate limiters
     let session_limiter = RateLimiter::new(config.rate_limit_session);
@@ -63,14 +57,14 @@ async fn main() {
 
     // Build application state
     let state = AppState {
-        pool: pool.clone(),
+        db: db.clone(),
         config,
         session_limiter: session_limiter.clone(),
         check_limiter: check_limiter.clone(),
     };
 
     // Spawn background cleanup tasks
-    spawn_cleanup_tasks(pool, session_limiter, check_limiter);
+    spawn_cleanup_tasks(db, session_limiter, check_limiter);
 
     // CORS layer — allow requests from Roblox HTTP service
     let cors = CorsLayer::new()
@@ -107,18 +101,18 @@ async fn main() {
 }
 
 /// Spawn background tasks for periodic cleanup.
-fn spawn_cleanup_tasks(pool: PgPool, session_limiter: RateLimiter, check_limiter: RateLimiter) {
-    // Database cleanup: every 30 minutes, remove expired keys and old tokens
+fn spawn_cleanup_tasks(
+    db: SupabaseClient,
+    session_limiter: RateLimiter,
+    check_limiter: RateLimiter,
+) {
+    // Database cleanup: every 30 minutes
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(1800));
         loop {
             interval.tick().await;
-            match db::cleanup_expired(&pool).await {
-                Ok(count) => {
-                    if count > 0 {
-                        tracing::info!("Cleanup removed {} expired records", count);
-                    }
-                }
+            match db.cleanup_expired().await {
+                Ok(_) => tracing::debug!("Cleanup completed"),
                 Err(e) => tracing::error!("Cleanup error: {}", e),
             }
         }

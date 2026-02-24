@@ -1,19 +1,17 @@
 use std::net::IpAddr;
 
 use axum::{
-    Json,
     extract::{Query, State},
+    Json,
 };
 
-use crate::AppState;
-use crate::db;
 use crate::error::AppError;
 use crate::models::{CheckKeyQuery, CheckKeyResponse};
+use crate::AppState;
 
 /// GET /api/check?key=...&hwid=...
 ///
 /// Called by Roblox Lua scripts to validate a key.
-/// Returns JSON: {"valid": true} or {"valid": false, "reason": "..."}
 pub async fn check_key(
     State(state): State<AppState>,
     Query(query): Query<CheckKeyQuery>,
@@ -34,7 +32,11 @@ pub async fn check_key(
     }
 
     // Check key validity
-    let (valid, reason) = db::check_key_validity(&state.pool, &query.key, &query.hwid).await?;
+    let (valid, reason) = state
+        .db
+        .check_key_validity(&query.key, &query.hwid)
+        .await
+        .map_err(|e| AppError::Internal(e))?;
 
     Ok(Json(CheckKeyResponse { valid, reason }))
 }

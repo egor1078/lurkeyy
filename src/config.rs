@@ -2,7 +2,8 @@ use std::env;
 
 #[derive(Clone, Debug)]
 pub struct AppConfig {
-    pub database_url: String,
+    pub supabase_url: String,
+    pub supabase_key: String,
     pub hmac_secret: String,
     pub turnstile_secret: String,
     pub linkvertise_id: String,
@@ -17,7 +18,8 @@ pub struct AppConfig {
 impl AppConfig {
     pub fn from_env() -> Self {
         Self {
-            database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
+            supabase_url: env::var("SUPABASE_URL").expect("SUPABASE_URL must be set"),
+            supabase_key: env::var("SUPABASE_KEY").expect("SUPABASE_KEY must be set"),
             hmac_secret: env::var("HMAC_SECRET").expect("HMAC_SECRET must be set"),
             turnstile_secret: env::var("TURNSTILE_SECRET").expect("TURNSTILE_SECRET must be set"),
             linkvertise_id: env::var("LINKVERTISE_ID").expect("LINKVERTISE_ID must be set"),

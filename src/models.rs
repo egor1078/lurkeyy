@@ -1,15 +1,24 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// A key record stored in the database.
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+/// A key record stored in Supabase.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyRecord {
-    pub id: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
     pub hwid: String,
     pub key_value: String,
-    pub created_at: DateTime<Utc>,
-    pub expires_at: DateTime<Utc>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub expires_at: String,
     pub ip_address: Option<String>,
+}
+
+/// A used token record.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsedToken {
+    pub token_hash: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub used_at: Option<String>,
 }
 
 /// JWT claims for session tokens.

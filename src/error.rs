@@ -1,7 +1,7 @@
 use axum::{
-    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
+    Json,
 };
 use serde_json::json;
 
@@ -39,17 +39,5 @@ impl IntoResponse for AppError {
         });
 
         (status, Json(body)).into_response()
-    }
-}
-
-impl From<sqlx::Error> for AppError {
-    fn from(err: sqlx::Error) -> Self {
-        AppError::Internal(format!("Database error: {}", err))
-    }
-}
-
-impl From<jsonwebtoken::errors::Error> for AppError {
-    fn from(err: jsonwebtoken::errors::Error) -> Self {
-        AppError::Unauthorized(format!("Token error: {}", err))
     }
 }
