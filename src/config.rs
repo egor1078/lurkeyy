@@ -41,7 +41,7 @@ impl AppConfig {
                 .parse()
                 .expect("RATE_LIMIT_CHECK must be a number"),
             port: env::var("PORT")
-                .unwrap_or_else(|_| "3000".to_string())
+                .unwrap_or_else(|_| "10000".to_string())
                 .parse()
                 .expect("PORT must be a number"),
         }

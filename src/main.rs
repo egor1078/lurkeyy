@@ -31,6 +31,9 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
+    // Earliest possible output for debugging
+    eprintln!("=== LURK Key System starting ===");
+
     // Load .env file (if present)
     dotenvy::dotenv().ok();
 
@@ -42,10 +45,11 @@ async fn main() {
         .init();
 
     // Load configuration
+    tracing::info!("Loading configuration...");
     let config = AppConfig::from_env();
     let port = config.port;
 
-    tracing::info!("Starting LURK Key System backend...");
+    tracing::info!("Starting LURK Key System on port {}...", port);
 
     // Initialize Supabase client
     let db = SupabaseClient::new(&config.supabase_url, &config.supabase_key);
